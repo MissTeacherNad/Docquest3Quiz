@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A Freeman's Land Digital Check</title>
+  <style>
+    :root {
+      --navy: #153b62;
+      --blue: #2877b7;
+      --teal: #20aeb7;
+      --yellow: #f6df24;
+      --orange: #f07c18;
+      --green: #238a62;
+      --red: #b53a35;
+      --ink: #222a31;
+      --muted: #66717d;
+      --line: #d9e0e6;
+      --paper: #ffffff;
+      --soft: #eef6fa;
+    }
+    * { box-sizing: border-box }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, Aptos, "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(135deg, #e9f7f8 0%, #ffffff 48%, #fff8dc 100%);
+    }
+    body::before {
+      content: "";
+      display: block;
+      height: 8px;
+      background: linear-gradient(90deg, var(--teal) 0 25%, var(--orange) 25% 50%, #7dcbd0 50% 75%, #7453a6 75%);
+    }
+    .shell { width: min(960px, calc(100% - 28px)); margin: 24px auto 40px }
+    header { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 18px }
+    .eyebrow { margin: 0 0 4px; color: var(--blue); font-size: .82rem; font-weight: 800; letter-spacing: .11em }
+    h1 { margin: 0; font-size: clamp(1.75rem, 4vw, 2.8rem); line-height: 1.04; color: var(--navy) }
+    .subtitle { margin: 8px 0 0; color: var(--muted); font-size: 1rem }
+    .status {
+      min-width: 175px;
+      padding: 11px 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,.9);
+      text-align: right;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .status strong { display: block; color: var(--navy); font-size: 1.15rem }
+    .progress { height: 9px; overflow: hidden; border-radius: 999px; background: #dfe8ed; margin: 0 0 14px }
+    .progress span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--teal), var(--blue)); transition: width .25s ease }
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: 0 16px 45px rgba(21,59,98,.12);
+      padding: clamp(20px, 4vw, 38px);
+    }
+    .doc-tag { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 18px; padding: 7px 12px; border-radius: 999px; background: #eaf4fa; color: var(--blue); font-size: .85rem; font-weight: 800; letter-spacing: .04em }
+    .doc-tag::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--orange) }
+    h2 { margin: 0 0 22px; color: var(--navy); font-size: clamp(1.25rem, 2.8vw, 1.75rem); line-height: 1.25 }
+    .answers { display: grid; gap: 11px }
+    .answer {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 12px;
+      align-items: center;
+      padding: 13px 15px;
+      border: 2px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      color: var(--ink);
+      text-align: left;
+      font: inherit;
+      cursor: pointer;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+    .answer:hover, .answer:focus-visible { transform: translateY(-1px); border-color: var(--blue); outline: none }
+    .answer .letter { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--soft); color: var(--navy); font-weight: 800 }
+    .answer.correct { border-color: var(--green); background: #eaf6f0 }
+    .answer.wrong { border-color: var(--red); background: #fff0ef }
+    .answer:disabled { cursor: default; transform: none }
+    .feedback { display: none; margin-top: 18px; padding: 15px 17px; border-radius: 13px; line-height: 1.45 }
+    .feedback.show { display: block }
+    .feedback.good { background: #eaf6f0; color: #176344 }
+    .feedback.bad { background: #fff0ef; color: #7d2926 }
+    .next {
+      display: none;
+      margin: 18px 0 0 auto;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 20px;
+      background: var(--navy);
+      color: #fff;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .next.show { display: block }
+    .start { text-align: center }
+    .start h2 { font-size: clamp(1.6rem, 4vw, 2.35rem) }
+    .start p { max-width: 660px; margin: 0 auto 18px; color: var(--muted); line-height: 1.55 }
+    .big-button {
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 24px;
+      background: var(--orange);
+      color: #fff;
+      font: inherit;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(240,124,24,.24);
+    }
+    .result { text-align: center }
+    .score-ring {
+      width: 150px;
+      height: 150px;
+      margin: 6px auto 18px;
+      display: grid;
+      place-items: center;
+      border: 13px solid #dcecf2;
+      border-top-color: var(--teal);
+      border-right-color: var(--blue);
+      border-radius: 50%;
+      color: var(--navy);
+      font-size: 2.3rem;
+      font-weight: 900;
+    }
+    .result p { max-width: 650px; margin: 8px auto 18px; color: var(--muted); line-height: 1.5 }
+    .result-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px }
+    .secondary { background: #fff; border: 2px solid var(--blue); color: var(--blue); box-shadow: none }
+    .mastery { margin-top: 18px; padding: 12px; border-radius: 12px; background: #eaf6f0; color: #176344; font-weight: 800 }
+    footer { margin-top: 18px; text-align: center; color: var(--muted); font-size: .86rem }
+    @media (max-width: 640px) {
+      header { display: block }
+      .status { margin-top: 14px; text-align: left }
+      .card { border-radius: 16px }
+      .answer { grid-template-columns: 32px 1fr; padding: 11px }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <p class="eyebrow">THE INVISIBLE BORDER</p>
+        <h1>A Freeman's Land</h1>
+        <p class="subtitle">Individual digital check after the four group reports</p>
+      </div>
+      <div class="status" aria-live="polite">
+        <span id="statusLabel">Ready</span>
+        <strong id="statusScore">12 questions</strong>
+      </div>
+    </header>
+    <div class="progress" aria-label="Quiz progress"><span id="progressBar"></span></div>
+    <section class="card" id="app"></section>
+    <footer>Miss Yahia · 2026 27 · The Invisible Border</footer>
+  </main>
+  <script>
+    const questions = [
+      {
+        doc: "Document A1 · G A Lewis's letter",
+        q: "Where did Lewis hope the eleven freedom seekers would eventually arrive?",
+        options: ["New York", "Canada", "Harrisburg", "Richmond"],
+        answer: "Canada",
+        why: "Lewis asks for financial assistance to help the group reach Canada."
+      },
+      {
+        doc: "Document A1 · G A Lewis's letter",
+        q: "Which detail best explains why the group had to move carefully?",
+        options: ["They had lost their train tickets", "They wanted to attend a fair", "They faced pursuit and unusual danger", "They were searching for paid work"],
+        answer: "They faced pursuit and unusual danger",
+        why: "Lewis mentions fear of pursuit and describes the case as one of unusual danger."
+      },
+      {
+        doc: "Document A1 · G A Lewis's letter",
+        q: "Why were the eleven travellers separated into smaller groups?",
+        options: ["To reduce the risk of capture", "To collect more money", "To travel back south", "To find different jobs"],
+        answer: "To reduce the risk of capture",
+        why: "Separating the group made movement and concealment safer."
+      },
+      {
+        doc: "Document A2 · G S Nelson's letter",
+        q: "What do goods and boxes refer to in Nelson's letter?",
+        options: ["Food supplies", "Train equipment", "Secret newspapers", "Freedom seekers"],
+        answer: "Freedom seekers",
+        why: "The business vocabulary is code used to protect the identities of people escaping slavery."
+      },
+      {
+        doc: "Document A2 · G S Nelson's letter",
+        q: "Why does Nelson ask Still to use the word goods in his reply?",
+        options: ["To request a payment", "To disguise the message if the letter was intercepted", "To complain about the railway", "To describe the size of a parcel"],
+        answer: "To disguise the message if the letter was intercepted",
+        why: "The code made dangerous information look like ordinary business correspondence."
+      },
+      {
+        doc: "Document A2 · G S Nelson's letter",
+        q: "Which sequence of places appears in the coded movements described by Nelson?",
+        options: ["Wilmington, Canada, Richmond", "Elmira, Virginia, Boston", "Harrisburg, Reading, Elmira", "Chicago, Glenwood, Texas"],
+        answer: "Harrisburg, Reading, Elmira",
+        why: "People moved through a chain of contacts linking Harrisburg, Reading and Elmira."
+      },
+      {
+        doc: "Document B · The End of Slavery",
+        q: "What central point does Coleman make about enslaved African Americans during the Civil War?",
+        options: ["They acted in their own freedom by escaping towards Union forces", "They all waited for a single law", "They mainly left the United States by ship", "They were immediately free in every state in 1861"],
+        answer: "They acted in their own freedom by escaping towards Union forces",
+        why: "The document gives enslaved people an active role in the process of emancipation."
+      },
+      {
+        doc: "Document B · The End of Slavery",
+        q: "Which statement gives the most accurate chronology?",
+        options: ["Nationwide abolition came before the Civil War", "The Thirteenth Amendment was passed in 1850", "The Civil War began after nationwide abolition", "The Emancipation Proclamation took effect before nationwide abolition"],
+        answer: "The Emancipation Proclamation took effect before nationwide abolition",
+        why: "The proclamation took effect in 1863. Nationwide abolition came with the Thirteenth Amendment in 1865."
+      },
+      {
+        doc: "Document B · The End of Slavery",
+        q: "Which conclusion best reflects the document?",
+        options: ["One speech alone ended slavery", "Black agency, war and federal action all contributed to emancipation", "The Underground Railroad legally abolished slavery", "Freedom began only after 1865"],
+        answer: "Black agency, war and federal action all contributed to emancipation",
+        why: "Emancipation was a process, not a single isolated event."
+      },
+      {
+        doc: "Document C · A Place of Commemoration",
+        q: "Where is the Underground Railroad memorial presented in the report?",
+        options: ["Wilmington, Delaware", "Elmira, New York", "Glenwood, Illinois", "Galveston, Texas"],
+        answer: "Glenwood, Illinois",
+        why: "The report presents Glenwood's Underground Railroad Memorial Park in Illinois."
+      },
+      {
+        doc: "Document C · A Place of Commemoration",
+        q: "What was the historical role of the building later known as the Fireside Chalet?",
+        options: ["An inn that served as a safe haven", "A Confederate military camp", "A courthouse that punished abolitionists", "A station that sent people back south"],
+        answer: "An inn that served as a safe haven",
+        why: "Freedom seekers could cross from the train stop to the inn and find temporary shelter."
+      },
+      {
+        doc: "Document C · A Place of Commemoration",
+        q: "Why is the Glenwood memorial important today?",
+        options: ["It replaces all written historical sources", "It proves every escape followed the same route", "It celebrates the railway company", "It connects local people and future generations with the history of freedom seekers"],
+        answer: "It connects local people and future generations with the history of freedom seekers",
+        why: "The memorial turns a local place into a space for education, remembrance and community."
+      }
+    ]
+
+    const app = document.getElementById("app")
+    const progressBar = document.getElementById("progressBar")
+    const statusLabel = document.getElementById("statusLabel")
+    const statusScore = document.getElementById("statusScore")
+    const letters = ["A", "B", "C", "D"]
+    const storageKey = "freemans-land-first-score-v1"
+    let order = []
+    let cursor = 0
+    let score = 0
+    let missed = []
+    let reviewMode = false
+
+    function shuffle(items) {
+      const result = [...items]
+      for (let i = result.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1))
+        const temp = result[i]
+        result[i] = result[j]
+        result[j] = temp
+      }
+      return result
+    }
+
+    function escapeHtml(text) {
+      return text.replace(/[&<>"]/g, character => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"})[character])
+    }
+
+    function startScreen() {
+      progressBar.style.width = "0%"
+      statusLabel.textContent = "Ready"
+      statusScore.textContent = "12 questions"
+      app.innerHTML = `
+        <div class="start">
+          <span class="doc-tag">INDIVIDUAL CHECK</span>
+          <h2>Can you connect all four documents?</h2>
+          <p>Answer without your notes first. Your first score will be kept on this device. If you miss a question, it will return in a short review round.</p>
+          <button class="big-button" id="startButton">Start the quiz</button>
+        </div>`
+      document.getElementById("startButton").addEventListener("click", startQuiz)
+    }
+
+    function startQuiz() {
+      order = shuffle(questions.map((_, index) => index))
+      cursor = 0
+      score = 0
+      missed = []
+      reviewMode = false
+      showQuestion()
+    }
+
+    function showQuestion() {
+      const qIndex = order[cursor]
+      const item = questions[qIndex]
+      const choices = shuffle(item.options)
+      const total = order.length
+      const number = cursor + 1
+      progressBar.style.width = `${((number - 1) / total) * 100}%`
+      statusLabel.textContent = reviewMode ? "Review round" : `Question ${number} of ${total}`
+      statusScore.textContent = reviewMode ? `${total - cursor} to master` : `${score} correct`
+      app.innerHTML = `
+        <span class="doc-tag">${escapeHtml(item.doc)}</span>
+        <h2>${escapeHtml(item.q)}</h2>
+        <div class="answers">
+          ${choices.map((choice, index) => `<button class="answer" data-choice="${escapeHtml(choice)}"><span class="letter">${letters[index]}</span><span>${escapeHtml(choice)}</span></button>`).join("")}
+        </div>
+        <div class="feedback" id="feedback" aria-live="polite"></div>
+        <button class="next" id="nextButton">Continue</button>`
+      document.querySelectorAll(".answer").forEach(button => button.addEventListener("click", () => answerQuestion(button, item, qIndex)))
+      document.getElementById("nextButton").addEventListener("click", advance)
+    }
+
+    function answerQuestion(button, item, qIndex) {
+      const choice = button.dataset.choice
+      const correct = choice === item.answer
+      document.querySelectorAll(".answer").forEach(candidate => {
+        candidate.disabled = true
+        if (candidate.dataset.choice === item.answer) candidate.classList.add("correct")
+      })
+      const feedback = document.getElementById("feedback")
+      if (correct) {
+        button.classList.add("correct")
+        feedback.className = "feedback show good"
+        feedback.innerHTML = `<strong>Correct.</strong> ${escapeHtml(item.why)}`
+        if (!reviewMode) score += 1
+      } else {
+        button.classList.add("wrong")
+        feedback.className = "feedback show bad"
+        feedback.innerHTML = `<strong>Not yet.</strong> ${escapeHtml(item.why)}`
+        if (!reviewMode && !missed.includes(qIndex)) missed.push(qIndex)
+      }
+      statusScore.textContent = reviewMode ? `${order.length - cursor - (correct ? 1 : 0)} to master` : `${score} correct`
+      document.getElementById("nextButton").classList.add("show")
+    }
+
+    function advance() {
+      cursor += 1
+      if (cursor < order.length) {
+        showQuestion()
+        return
+      }
+      if (reviewMode) {
+        masteryScreen()
+        return
+      }
+      finishFirstPass()
+    }
+
+    function finishFirstPass() {
+      progressBar.style.width = "100%"
+      if (localStorage.getItem(storageKey) === null) localStorage.setItem(storageKey, String(score))
+      const firstScore = Number(localStorage.getItem(storageKey))
+      statusLabel.textContent = "First pass complete"
+      statusScore.textContent = `${firstScore} of 12 retained`
+      let message = "Return to the evidence sheet before reviewing your mistakes."
+      if (score >= 10) message = "Very secure understanding. You can now build a two-document synthesis."
+      else if (score >= 7) message = "The main ideas are understood. Review the precise evidence in your missed questions."
+      app.innerHTML = `
+        <div class="result">
+          <span class="doc-tag">FIRST SCORE</span>
+          <div class="score-ring">${score}/12</div>
+          <h2>${score >= 10 ? "Strong historical understanding" : score >= 7 ? "Good foundations" : "Evidence needs another look"}</h2>
+          <p>${message}</p>
+          <div class="result-actions">
+            ${missed.length ? `<button class="big-button" id="reviewButton">Review ${missed.length} missed question${missed.length > 1 ? "s" : ""}</button>` : `<button class="big-button" id="masteredButton">View mastery screen</button>`}
+          </div>
+        </div>`
+      const reviewButton = document.getElementById("reviewButton")
+      if (reviewButton) reviewButton.addEventListener("click", startReview)
+      const masteredButton = document.getElementById("masteredButton")
+      if (masteredButton) masteredButton.addEventListener("click", masteryScreen)
+    }
+
+    function startReview() {
+      order = shuffle(missed)
+      cursor = 0
+      reviewMode = true
+      showQuestion()
+    }
+
+    function masteryScreen() {
+      progressBar.style.width = "100%"
+      const firstScore = localStorage.getItem(storageKey)
+      statusLabel.textContent = "Mastery reached"
+      statusScore.textContent = `First score ${firstScore}/12`
+      app.innerHTML = `
+        <div class="result">
+          <span class="doc-tag">ALL FOUR DOCUMENTS</span>
+          <h2>You have corrected every missed question.</h2>
+          <p>Your first score remains <strong>${firstScore}/12</strong>. You can now explain how escape networks, emancipation and remembrance are connected.</p>
+          <div class="mastery">ESCAPE · GAIN FREEDOM · REMEMBER</div>
+        </div>`
+    }
+
+    startScreen()
+  </script>
+</body>
+</html>
